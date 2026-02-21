@@ -163,6 +163,10 @@ button {
   gap: 0.55rem;
 }
 
+.board-wrapper {
+  width: 100%;
+}
+
 .cell {
   min-height: 95px;
   border: 1px solid var(--line);
@@ -213,16 +217,73 @@ button {
 }
 
 @media (max-width: 580px) {
+  .app {
+    width: 100%;
+    margin: 0;
+    min-height: 100vh;
+    border-radius: 0;
+    padding: 0.85rem 0.7rem 1rem;
+  }
+
+  h1 {
+    margin-top: 0.1rem;
+    font-size: 1.4rem;
+  }
+
+  .player-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+    align-items: stretch;
+  }
+
+  .player-controls label,
+  .current-player {
+    font-size: 0.92rem;
+  }
+
+  .player-controls input,
+  .player-controls button,
+  .controls button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
   .layout {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .progress-panel {
+    order: -1;
+  }
+
+  .board-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.35rem;
   }
 
   .board {
+    width: max-content;
+    min-width: 100%;
+    grid-template-columns: repeat(5, 72px);
     gap: 0.4rem;
   }
 
   .cell {
     min-height: 72px;
+    font-size: 0.85rem;
+    padding: 0.4rem;
+  }
+
+  .progress-item {
     font-size: 0.85rem;
   }
 }
