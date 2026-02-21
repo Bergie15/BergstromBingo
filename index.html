@@ -3,20 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Private Custom Bingo</title>
+    <title>Bergstrom Bingo</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="app">
-      <header>
-        <h1>Custom Bingo</h1>
+      <header class="app-header">
+        <h1>Bergstrom Bingo</h1>
+        <details class="menu-wrap header-menu">
+          <summary class="menu-trigger" aria-label="Open board actions">☰</summary>
+          <div class="menu-items">
+            <button id="toggle-edit" type="button">Enter Edit Mode</button>
+            <button id="save-text" type="button" hidden>Update Wording</button>
+            <button id="reset-board" type="button">Reset Shared Text</button>
+          </div>
+        </details>
         <p>Each player can have their own board progress. Use Edit Mode to change the shared square text for everyone.</p>
       </header>
 
       <section class="player-controls">
         <label for="player-name">Player name</label>
         <input id="player-name" type="text" maxlength="30" placeholder="Enter your name" autocomplete="name" />
-        <button id="save-player" type="button">Create / Switch Board</button>
+        <button id="save-player" class="switch-board-btn" type="button">Create / Switch Board</button>
         <p id="current-player" class="current-player" aria-live="polite"></p>
       </section>
 
@@ -25,14 +33,6 @@
           <section class="controls">
             <button id="clear-marks" type="button">Clear My Marks</button>
 
-            <details class="menu-wrap">
-              <summary class="menu-trigger" aria-label="Open board actions">☰</summary>
-              <div class="menu-items">
-                <button id="toggle-edit" type="button">Enter Edit Mode</button>
-                <button id="save-text" type="button" hidden>Update Wording</button>
-                <button id="reset-board" type="button">Reset Shared Text</button>
-              </div>
-            </details>
           </section>
 
           <p id="sync-status" class="sync-status" aria-live="polite"></p>

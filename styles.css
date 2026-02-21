@@ -31,6 +31,18 @@ body {
 }
 
 h1 {
+  margin: 0;
+}
+
+.app-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.app-header p {
+  grid-column: 1 / -1;
   margin-bottom: 0.5rem;
 }
 
@@ -45,6 +57,10 @@ header p {
   flex-wrap: wrap;
   margin-bottom: 0.5rem;
   align-items: center;
+}
+
+.header-menu {
+  justify-self: end;
 }
 
 .player-controls {
@@ -150,6 +166,24 @@ button {
   border-radius: 999px;
   padding: 0.5rem 1rem;
   font-size: 0.95rem;
+}
+
+.switch-board-btn {
+  border: none;
+  background: linear-gradient(135deg, #3157e0, #4f7bff);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  font-weight: 600;
+  box-shadow: 0 8px 18px rgba(49, 87, 224, 0.24);
+  transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+}
+
+.switch-board-btn:hover,
+.switch-board-btn:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(49, 87, 224, 0.28);
+  filter: brightness(1.03);
 }
 
 .menu-wrap {
