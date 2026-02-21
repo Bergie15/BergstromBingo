@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Private Custom Bingo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>Custom Bingo</h1>
+        <p>Tap/click squares to mark green. Use Edit Mode to change wording, then save.</p>
+      </header>
+
+      <section class="controls">
+        <button id="toggle-edit" type="button">Enter Edit Mode</button>
+        <button id="save-text" type="button" hidden>Save Text Changes</button>
+        <button id="reset-board" type="button">Reset Board</button>
+        <button id="clear-marks" type="button">Clear Marks</button>
+      </section>
+
+      <p id="sync-status" class="sync-status" aria-live="polite"></p>
+
+      <section class="board-wrapper">
+        <div id="bingo-board" class="board" aria-label="Bingo board"></div>
+      </section>
+
+      <p id="win-message" class="win-message" aria-live="polite"></p>
+    </main>
+
+    <canvas id="fireworks" class="fireworks" aria-hidden="true"></canvas>
+
+    <template id="cell-template">
+      <button class="cell" type="button">
+        <span class="cell-text"></span>
+      </button>
+    </template>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
