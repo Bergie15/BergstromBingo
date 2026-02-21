@@ -38,7 +38,8 @@ h1 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.5rem;
+  column-gap: 0.75rem;
+  row-gap: 0.3rem;
 }
 
 .app-header p {
@@ -169,21 +170,27 @@ button {
 }
 
 .switch-board-btn {
-  border: none;
-  background: linear-gradient(135deg, #3157e0, #4f7bff);
+  border: 1px solid #2747bf;
+  background: linear-gradient(135deg, #335cf0 0%, #4579ff 52%, #5e92ff 100%);
   color: #fff;
   border-radius: 999px;
-  padding: 0.55rem 1rem;
-  font-weight: 600;
-  box-shadow: 0 8px 18px rgba(49, 87, 224, 0.24);
+  padding: 0.6rem 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 10px 20px rgba(46, 91, 247, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
 }
 
 .switch-board-btn:hover,
 .switch-board-btn:focus-visible {
   transform: translateY(-1px);
-  box-shadow: 0 12px 22px rgba(49, 87, 224, 0.28);
-  filter: brightness(1.03);
+  box-shadow: 0 14px 26px rgba(46, 91, 247, 0.33), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  filter: saturate(1.06) brightness(1.03);
+}
+
+.switch-board-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 14px rgba(46, 91, 247, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .menu-wrap {
@@ -192,17 +199,18 @@ button {
 
 .menu-trigger {
   list-style: none;
-  border: 1px solid var(--line);
-  background: white;
+  border: 1px solid #cad2ea;
+  background: linear-gradient(180deg, #ffffff, #f5f8ff);
   border-radius: 999px;
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 2.45rem;
+  height: 2.45rem;
   display: grid;
   place-items: center;
   font-size: 1.2rem;
   line-height: 1;
   cursor: pointer;
   user-select: none;
+  box-shadow: 0 6px 14px rgba(24, 40, 80, 0.12);
 }
 
 .menu-trigger::-webkit-details-marker {
