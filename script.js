@@ -1,6 +1,7 @@
 const BOARD_SIZE = 5;
 const CELL_COUNT = BOARD_SIZE * BOARD_SIZE;
 const STORAGE_KEY = "customBingoState";
+const ACTIVE_PLAYER_KEY = "customBingoActivePlayer";
 
 // Fill these from your Supabase project settings to enable shared realtime state.
 const SUPABASE_URL = "";
@@ -41,10 +42,15 @@ const winMessageEl = document.getElementById("win-message");
 const syncStatusEl = document.getElementById("sync-status");
 const toggleEditBtn = document.getElementById("toggle-edit");
 const saveTextBtn = document.getElementById("save-text");
+const playerNameInput = document.getElementById("player-name");
+const savePlayerBtn = document.getElementById("save-player");
+const currentPlayerEl = document.getElementById("current-player");
+const progressListEl = document.getElementById("progress-list");
 const canvas = document.getElementById("fireworks");
 const ctx = canvas.getContext("2d");
 
 let state = normalizeState(loadLocalState());
+let activePlayer = loadActivePlayerName(state);
 let draftTexts = [...state.texts];
 let isEditMode = false;
 let fireworks = [];
@@ -55,12 +61,26 @@ let syncEnabled = false;
 setupCanvas();
 window.addEventListener("resize", setupCanvas);
 
+ensurePlayerExists(activePlayer);
 wireControls();
-renderBoard();
-refreshWinState();
+renderAll();
 initSync();
 
 function wireControls() {
+  savePlayerBtn.addEventListener("click", async () => {
+    const rawName = playerNameInput.value.trim();
+    if (!rawName) {
+      window.alert("Please enter a player name.");
+      return;
+    }
+
+    activePlayer = rawName;
+    ensurePlayerExists(activePlayer);
+    persistLocal();
+    await persistShared();
+    renderAll();
+  });
+
   toggleEditBtn.addEventListener("click", () => {
     isEditMode = !isEditMode;
 
@@ -90,33 +110,31 @@ function wireControls() {
   });
 
   document.getElementById("reset-board").addEventListener("click", async () => {
-    state = {
-      texts: [...defaultTexts],
-      marked: Array(CELL_COUNT).fill(false)
-    };
+    state.texts = [...defaultTexts];
     draftTexts = [...state.texts];
 
     persistLocal();
     await persistShared();
 
     renderBoard();
-    refreshWinState();
   });
 
   document.getElementById("clear-marks").addEventListener("click", async () => {
-    state.marked = Array(CELL_COUNT).fill(false);
+    const playerState = getActivePlayerState();
+    playerState.marked = Array(CELL_COUNT).fill(false);
+    playerState.updatedAt = new Date().toISOString();
+
     persistLocal();
     await persistShared();
 
-    renderBoard();
-    refreshWinState();
+    renderAll();
   });
 }
 
 function loadLocalState() {
   const fallback = {
     texts: [...defaultTexts],
-    marked: Array(CELL_COUNT).fill(false)
+    players: {}
   };
 
   try {
@@ -135,15 +153,75 @@ function normalizeState(raw) {
       return typeof value === "string" && value.trim() ? value : defaultTexts[i];
     });
 
-  const safeMarked = Array(CELL_COUNT)
-    .fill(false)
-    .map((_, i) => Boolean(raw?.marked?.[i]));
+  const safePlayers = {};
 
-  return { texts: safeTexts, marked: safeMarked };
+  if (raw?.players && typeof raw.players === "object") {
+    Object.entries(raw.players).forEach(([name, player]) => {
+      const trimmedName = sanitizePlayerName(name);
+      if (!trimmedName) {
+        return;
+      }
+
+      safePlayers[trimmedName] = {
+        marked: Array(CELL_COUNT)
+          .fill(false)
+          .map((_, i) => Boolean(player?.marked?.[i])),
+        updatedAt: typeof player?.updatedAt === "string" ? player.updatedAt : new Date().toISOString()
+      };
+    });
+  }
+
+  // Backward compatibility with old single-player format.
+  if (raw?.marked && Array.isArray(raw.marked) && !Object.keys(safePlayers).length) {
+    safePlayers.Player = {
+      marked: Array(CELL_COUNT)
+        .fill(false)
+        .map((_, i) => Boolean(raw.marked[i])),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  return { texts: safeTexts, players: safePlayers };
+}
+
+function sanitizePlayerName(name) {
+  return String(name || "").trim().slice(0, 30);
+}
+
+function loadActivePlayerName(currentState) {
+  const savedName = sanitizePlayerName(localStorage.getItem(ACTIVE_PLAYER_KEY));
+  if (savedName) {
+    return savedName;
+  }
+
+  const existing = Object.keys(currentState.players);
+  return existing[0] || "Player";
+}
+
+function ensurePlayerExists(name) {
+  const safeName = sanitizePlayerName(name);
+  if (!safeName) {
+    return;
+  }
+
+  if (!state.players[safeName]) {
+    state.players[safeName] = {
+      marked: Array(CELL_COUNT).fill(false),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  activePlayer = safeName;
+}
+
+function getActivePlayerState() {
+  ensurePlayerExists(activePlayer);
+  return state.players[activePlayer];
 }
 
 function persistLocal() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(ACTIVE_PLAYER_KEY, activePlayer);
 }
 
 async function initSync() {
@@ -163,10 +241,10 @@ async function initSync() {
 
     if (data?.state) {
       state = normalizeState(data.state);
+      ensurePlayerExists(activePlayer);
       draftTexts = [...state.texts];
       persistLocal();
-      renderBoard();
-      refreshWinState();
+      renderAll();
     } else {
       await persistShared();
     }
@@ -184,12 +262,12 @@ async function initSync() {
         (payload) => {
           const incoming = normalizeState(payload.new.state);
           state = incoming;
+          ensurePlayerExists(activePlayer);
           if (!isEditMode) {
             draftTexts = [...incoming.texts];
           }
           persistLocal();
-          renderBoard();
-          refreshWinState();
+          renderAll();
         }
       )
       .subscribe();
@@ -223,8 +301,17 @@ function setSyncStatus(message) {
   syncStatusEl.textContent = message;
 }
 
+function renderAll() {
+  playerNameInput.value = activePlayer;
+  currentPlayerEl.textContent = `Current board: ${activePlayer}`;
+  renderBoard();
+  renderProgressPanel();
+  refreshWinState();
+}
+
 function renderBoard() {
   boardEl.replaceChildren();
+  const playerState = getActivePlayerState();
 
   for (let i = 0; i < CELL_COUNT; i += 1) {
     const cellNode = template.content.firstElementChild.cloneNode(true);
@@ -232,7 +319,7 @@ function renderBoard() {
     const text = isEditMode ? draftTexts[i] : state.texts[i];
 
     textSpan.textContent = text || "";
-    cellNode.classList.toggle("marked", Boolean(state.marked[i]));
+    cellNode.classList.toggle("marked", Boolean(playerState.marked[i]));
     cellNode.classList.toggle("editing", isEditMode);
 
     if (isEditMode) {
@@ -247,11 +334,11 @@ function renderBoard() {
       });
     } else {
       cellNode.addEventListener("click", async () => {
-        state.marked[i] = !state.marked[i];
+        playerState.marked[i] = !playerState.marked[i];
+        playerState.updatedAt = new Date().toISOString();
         persistLocal();
         await persistShared();
-        renderBoard();
-        refreshWinState();
+        renderAll();
       });
     }
 
@@ -259,9 +346,49 @@ function renderBoard() {
   }
 }
 
+function renderProgressPanel() {
+  progressListEl.replaceChildren();
+
+  const ranking = Object.entries(state.players)
+    .map(([name, player]) => {
+      const markedCount = player.marked.filter(Boolean).length;
+      return {
+        name,
+        markedCount,
+        percent: Math.round((markedCount / CELL_COUNT) * 100),
+        hasBingo: checkBingo(player.marked),
+        updatedAt: player.updatedAt || ""
+      };
+    })
+    .sort((a, b) => b.markedCount - a.markedCount || a.name.localeCompare(b.name));
+
+  if (!ranking.length) {
+    const emptyItem = document.createElement("li");
+    emptyItem.className = "progress-item";
+    emptyItem.textContent = "No players yet.";
+    progressListEl.appendChild(emptyItem);
+    return;
+  }
+
+  ranking.forEach((entry) => {
+    const item = document.createElement("li");
+    item.className = "progress-item";
+
+    const bingoBadge = entry.hasBingo ? " • BINGO" : "";
+    const activeBadge = entry.name === activePlayer ? " (you)" : "";
+    item.textContent = `${entry.name}${activeBadge}: ${entry.markedCount}/${CELL_COUNT} (${entry.percent}%)${bingoBadge}`;
+
+    if (entry.name === activePlayer) {
+      item.classList.add("active");
+    }
+
+    progressListEl.appendChild(item);
+  });
+}
+
 function refreshWinState() {
-  const hasWin = checkBingo(state.marked);
-  winMessageEl.textContent = hasWin ? "BINGO! 🎉 You got 5 in a row!" : "";
+  const hasWin = checkBingo(getActivePlayerState().marked);
+  winMessageEl.textContent = hasWin ? `BINGO! 🎉 ${activePlayer} got 5 in a row!` : "";
 
   if (hasWin) {
     launchFireworks();

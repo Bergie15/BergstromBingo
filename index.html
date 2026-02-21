@@ -10,23 +10,39 @@
     <main class="app">
       <header>
         <h1>Custom Bingo</h1>
-        <p>Tap/click squares to mark green. Use Edit Mode, then tap a square to edit its wording and save.</p>
+        <p>Each player can have their own board progress. Use Edit Mode to change the shared square text for everyone.</p>
       </header>
 
-      <section class="controls">
-        <button id="toggle-edit" type="button">Enter Edit Mode</button>
-        <button id="save-text" type="button" hidden>Save Text Changes</button>
-        <button id="reset-board" type="button">Reset Board</button>
-        <button id="clear-marks" type="button">Clear Marks</button>
+      <section class="player-controls">
+        <label for="player-name">Player name</label>
+        <input id="player-name" type="text" maxlength="30" placeholder="Enter your name" autocomplete="name" />
+        <button id="save-player" type="button">Create / Switch Board</button>
+        <p id="current-player" class="current-player" aria-live="polite"></p>
       </section>
 
-      <p id="sync-status" class="sync-status" aria-live="polite"></p>
+      <div class="layout">
+        <section class="main-panel">
+          <section class="controls">
+            <button id="toggle-edit" type="button">Enter Edit Mode</button>
+            <button id="save-text" type="button" hidden>Save Text Changes</button>
+            <button id="reset-board" type="button">Reset Shared Text</button>
+            <button id="clear-marks" type="button">Clear My Marks</button>
+          </section>
 
-      <section class="board-wrapper">
-        <div id="bingo-board" class="board" aria-label="Bingo board"></div>
-      </section>
+          <p id="sync-status" class="sync-status" aria-live="polite"></p>
 
-      <p id="win-message" class="win-message" aria-live="polite"></p>
+          <section class="board-wrapper">
+            <div id="bingo-board" class="board" aria-label="Bingo board"></div>
+          </section>
+
+          <p id="win-message" class="win-message" aria-live="polite"></p>
+        </section>
+
+        <aside class="progress-panel" aria-label="Player progress">
+          <h2>Player Progress</h2>
+          <ul id="progress-list" class="progress-list"></ul>
+        </aside>
+      </div>
     </main>
 
     <canvas id="fireworks" class="fireworks" aria-hidden="true"></canvas>
