@@ -219,6 +219,31 @@ function getActivePlayerState() {
   return state.players[activePlayer];
 }
 
+async function deletePlayer(name) {
+  const safeName = sanitizePlayerName(name);
+  if (!safeName || !state.players[safeName]) {
+    return;
+  }
+
+  const names = Object.keys(state.players);
+  if (names.length <= 1) {
+    window.alert("You need at least one player board.");
+    return;
+  }
+
+  delete state.players[safeName];
+
+  if (activePlayer === safeName) {
+    const remaining = Object.keys(state.players);
+    activePlayer = remaining[0] || "Player";
+    ensurePlayerExists(activePlayer);
+  }
+
+  persistLocal();
+  await persistShared();
+  renderAll();
+}
+
 function persistLocal() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   localStorage.setItem(ACTIVE_PLAYER_KEY, activePlayer);
@@ -376,7 +401,25 @@ function renderProgressPanel() {
 
     const bingoBadge = entry.hasBingo ? " • BINGO" : "";
     const activeBadge = entry.name === activePlayer ? " (you)" : "";
-    item.textContent = `${entry.name}${activeBadge}: ${entry.markedCount}/${CELL_COUNT} (${entry.percent}%)${bingoBadge}`;
+    const details = document.createElement("span");
+    details.className = "progress-item-details";
+    details.textContent = `${entry.name}${activeBadge}: ${entry.markedCount}/${CELL_COUNT} (${entry.percent}%)${bingoBadge}`;
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "delete-player";
+    deleteButton.textContent = "Delete";
+    deleteButton.setAttribute("aria-label", `Delete ${entry.name}`);
+    deleteButton.addEventListener("click", async () => {
+      const ok = window.confirm(`Delete ${entry.name}'s board and marks?`);
+      if (!ok) {
+        return;
+      }
+
+      await deletePlayer(entry.name);
+    });
+
+    item.append(details, deleteButton);
 
     if (entry.name === activePlayer) {
       item.classList.add("active");
