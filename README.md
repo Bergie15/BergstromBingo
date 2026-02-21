@@ -1,16 +1,14 @@
 # Custom Bingo (private-friendly static app)
 
-A 5x5 bingo board you can host for free as static files, with explicit Edit/Save mode and optional shared realtime state.
+A simple 5x5 bingo board you can host for free as static files.
 
 ## Features
 
-- Edit wording only when you click **Enter Edit Mode**.
-- Save wording via **Save Text Changes**.
-- Click/tap square to toggle marked state (green) in play mode.
+- Editable text in each square.
+- Click/tap square to toggle marked state (green).
 - Win detection for rows, columns, and diagonals.
 - Fireworks animation when you hit bingo (5 in a row).
-- Local persistence by default (`localStorage`).
-- Optional Supabase sync so all viewers see updates in realtime.
+- Local storage persistence for square text + marks.
 
 ## Run locally
 
@@ -20,31 +18,16 @@ python -m http.server 4173
 
 Then open <http://localhost:4173>.
 
-## Realtime shared setup (Supabase, free tier)
+## Free hosting + sharing privately
 
-1. Create a Supabase project (free).
-2. Run this SQL in Supabase SQL editor:
+You can deploy this as static files to GitHub Pages, Cloudflare Pages, Netlify, or Vercel.
 
-```sql
-create table if not exists public.boards (
-  id text primary key,
-  state jsonb not null,
-  updated_at timestamptz not null default now()
-);
+For "private to a few people":
 
-alter publication supabase_realtime add table public.boards;
-```
+1. **Unlisted URL approach (simplest/free):**
+   - Keep the repo private if your plan supports private Pages.
+   - Share the direct URL only with your group.
+2. **Password layer approach:**
+   - Put it behind Cloudflare Access (free tier) or Netlify/Vercel auth, then invite only emails you trust.
 
-3. In **Project Settings → API**, copy:
-   - Project URL
-   - anon public key
-4. Open `script.js` and set:
-   - `SUPABASE_URL`
-   - `SUPABASE_ANON_KEY`
-   - `BOARD_ID` (use same ID for everyone sharing one board)
-5. Deploy static files to GitHub Pages / Netlify / Cloudflare Pages / Vercel.
-
-## Private sharing options
-
-- Keep URL unlisted and share only with your group.
-- Add access control layer (Cloudflare Access, etc.) for invited users only.
+If you want, this can be extended with shared real-time boards (so everyone sees the same clicks) using a free backend like Supabase.
