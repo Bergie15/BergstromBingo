@@ -103,6 +103,35 @@ header p {
   padding: 0.5rem 0.6rem;
   font-size: 0.9rem;
   background: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.progress-item-details {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.delete-player {
+  border: 1px solid #c9578e;
+  background: #ffe5f1;
+  color: #7f1f4f;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.delete-player:disabled {
+  border-color: #c9cfdf;
+  background: #f3f5fb;
+  color: #6d7383;
+  cursor: not-allowed;
 }
 
 .progress-item.active {
