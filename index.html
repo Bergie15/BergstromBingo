@@ -23,10 +23,16 @@
       <div class="layout">
         <section class="main-panel">
           <section class="controls">
-            <button id="toggle-edit" type="button">Enter Edit Mode</button>
-            <button id="save-text" type="button" hidden>Save Text Changes</button>
-            <button id="reset-board" type="button">Reset Shared Text</button>
             <button id="clear-marks" type="button">Clear My Marks</button>
+
+            <details class="menu-wrap">
+              <summary class="menu-trigger" aria-label="Open board actions">☰</summary>
+              <div class="menu-items">
+                <button id="toggle-edit" type="button">Enter Edit Mode</button>
+                <button id="save-text" type="button" hidden>Update Wording</button>
+                <button id="reset-board" type="button">Reset Shared Text</button>
+              </div>
+            </details>
           </section>
 
           <p id="sync-status" class="sync-status" aria-live="polite"></p>
