@@ -408,8 +408,18 @@ function renderProgressPanel() {
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className = "delete-player";
-    deleteButton.textContent = "Delete";
+    deleteButton.textContent = "🗑 Delete";
+    deleteButton.title = `Delete ${entry.name}`;
     deleteButton.setAttribute("aria-label", `Delete ${entry.name}`);
+
+    const isOnlyPlayer = ranking.length <= 1;
+    deleteButton.disabled = isOnlyPlayer;
+
+    if (isOnlyPlayer) {
+      deleteButton.textContent = "Keep 1 player";
+      deleteButton.title = "At least one player board must remain";
+    }
+
     deleteButton.addEventListener("click", async () => {
       const ok = window.confirm(`Delete ${entry.name}'s board and marks?`);
       if (!ok) {
