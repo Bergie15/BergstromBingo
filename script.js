@@ -1,5 +1,11 @@
 const BOARD_SIZE = 5;
+const CELL_COUNT = BOARD_SIZE * BOARD_SIZE;
 const STORAGE_KEY = "customBingoState";
+
+// Fill these from your Supabase project settings to enable shared realtime state.
+const SUPABASE_URL = "";
+const SUPABASE_ANON_KEY = "";
+const BOARD_ID = "main";
 
 const defaultTexts = [
   "Finish coffee",
@@ -32,100 +38,226 @@ const defaultTexts = [
 const boardEl = document.getElementById("bingo-board");
 const template = document.getElementById("cell-template");
 const winMessageEl = document.getElementById("win-message");
+const syncStatusEl = document.getElementById("sync-status");
+const toggleEditBtn = document.getElementById("toggle-edit");
+const saveTextBtn = document.getElementById("save-text");
 const canvas = document.getElementById("fireworks");
 const ctx = canvas.getContext("2d");
 
-let state = loadState();
+let state = normalizeState(loadLocalState());
+let draftTexts = [...state.texts];
+let isEditMode = false;
 let fireworks = [];
 let animationId = null;
+let supabaseClient = null;
+let syncEnabled = false;
 
 setupCanvas();
 window.addEventListener("resize", setupCanvas);
 
+wireControls();
 renderBoard();
 refreshWinState();
+initSync();
 
-document.getElementById("reset-board").addEventListener("click", () => {
-  state = {
+function wireControls() {
+  toggleEditBtn.addEventListener("click", () => {
+    isEditMode = !isEditMode;
+
+    if (isEditMode) {
+      draftTexts = [...state.texts];
+      toggleEditBtn.textContent = "Cancel Edit";
+      saveTextBtn.hidden = false;
+    } else {
+      draftTexts = [...state.texts];
+      toggleEditBtn.textContent = "Enter Edit Mode";
+      saveTextBtn.hidden = true;
+    }
+
+    renderBoard();
+  });
+
+  saveTextBtn.addEventListener("click", async () => {
+    state.texts = [...draftTexts];
+    persistLocal();
+    await persistShared();
+
+    isEditMode = false;
+    toggleEditBtn.textContent = "Enter Edit Mode";
+    saveTextBtn.hidden = true;
+    renderBoard();
+    refreshWinState();
+  });
+
+  document.getElementById("reset-board").addEventListener("click", async () => {
+    state = {
+      texts: [...defaultTexts],
+      marked: Array(CELL_COUNT).fill(false)
+    };
+    draftTexts = [...state.texts];
+
+    persistLocal();
+    await persistShared();
+
+    renderBoard();
+    refreshWinState();
+  });
+
+  document.getElementById("clear-marks").addEventListener("click", async () => {
+    state.marked = Array(CELL_COUNT).fill(false);
+    persistLocal();
+    await persistShared();
+
+    renderBoard();
+    refreshWinState();
+  });
+}
+
+function loadLocalState() {
+  const fallback = {
     texts: [...defaultTexts],
-    marked: Array(BOARD_SIZE * BOARD_SIZE).fill(false)
-  };
-  persist();
-  renderBoard();
-  refreshWinState();
-});
-
-document.getElementById("clear-marks").addEventListener("click", () => {
-  state.marked = Array(BOARD_SIZE * BOARD_SIZE).fill(false);
-  persist();
-  renderBoard();
-  refreshWinState();
-});
-
-function loadState() {
-  const emptyState = {
-    texts: [...defaultTexts],
-    marked: Array(BOARD_SIZE * BOARD_SIZE).fill(false)
+    marked: Array(CELL_COUNT).fill(false)
   };
 
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (!parsed || !Array.isArray(parsed.texts) || !Array.isArray(parsed.marked)) {
-      return emptyState;
-    }
-
-    return {
-      texts: parsed.texts.slice(0, BOARD_SIZE * BOARD_SIZE),
-      marked: parsed.marked.slice(0, BOARD_SIZE * BOARD_SIZE)
-    };
+    return parsed || fallback;
   } catch {
-    return emptyState;
+    return fallback;
   }
 }
 
-function persist() {
+function normalizeState(raw) {
+  const safeTexts = Array(CELL_COUNT)
+    .fill("")
+    .map((_, i) => {
+      const value = raw?.texts?.[i];
+      return typeof value === "string" && value.trim() ? value : defaultTexts[i];
+    });
+
+  const safeMarked = Array(CELL_COUNT)
+    .fill(false)
+    .map((_, i) => Boolean(raw?.marked?.[i]));
+
+  return { texts: safeTexts, marked: safeMarked };
+}
+
+function persistLocal() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+async function initSync() {
+  if (!window.supabase || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    setSyncStatus("Local-only mode. Add Supabase keys in script.js for shared realtime.");
+    return;
+  }
+
+  try {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    syncEnabled = true;
+
+    const { data, error } = await supabaseClient.from("boards").select("state").eq("id", BOARD_ID).single();
+    if (error && error.code !== "PGRST116") {
+      throw error;
+    }
+
+    if (data?.state) {
+      state = normalizeState(data.state);
+      draftTexts = [...state.texts];
+      persistLocal();
+      renderBoard();
+      refreshWinState();
+    } else {
+      await persistShared();
+    }
+
+    supabaseClient
+      .channel(`board-${BOARD_ID}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "boards",
+          filter: `id=eq.${BOARD_ID}`
+        },
+        (payload) => {
+          const incoming = normalizeState(payload.new.state);
+          state = incoming;
+          if (!isEditMode) {
+            draftTexts = [...incoming.texts];
+          }
+          persistLocal();
+          renderBoard();
+          refreshWinState();
+        }
+      )
+      .subscribe();
+
+    setSyncStatus("Realtime sync connected.");
+  } catch (error) {
+    setSyncStatus(`Sync offline: ${error.message}`);
+  }
+}
+
+async function persistShared() {
+  if (!syncEnabled || !supabaseClient) {
+    return;
+  }
+
+  const { error } = await supabaseClient.from("boards").upsert(
+    {
+      id: BOARD_ID,
+      state,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: "id" }
+  );
+
+  if (error) {
+    setSyncStatus(`Could not sync: ${error.message}`);
+  }
+}
+
+function setSyncStatus(message) {
+  syncStatusEl.textContent = message;
 }
 
 function renderBoard() {
   boardEl.replaceChildren();
 
-  for (let i = 0; i < BOARD_SIZE * BOARD_SIZE; i += 1) {
+  for (let i = 0; i < CELL_COUNT; i += 1) {
     const cellNode = template.content.firstElementChild.cloneNode(true);
     const textSpan = cellNode.querySelector(".cell-text");
+    const text = isEditMode ? draftTexts[i] : state.texts[i];
 
-    textSpan.textContent = state.texts[i] || "";
-
+    textSpan.textContent = text || "";
     cellNode.classList.toggle("marked", Boolean(state.marked[i]));
+    cellNode.classList.toggle("editing", isEditMode);
 
-    cellNode.addEventListener("click", (event) => {
-      if (event.target.classList.contains("cell-text")) {
-        return;
-      }
+    if (isEditMode) {
+      textSpan.contentEditable = "true";
 
-      state.marked[i] = !state.marked[i];
-      persist();
-      renderBoard();
-      refreshWinState();
-    });
+      textSpan.addEventListener("input", () => {
+        draftTexts[i] = textSpan.textContent.trim() || " ";
+      });
 
-    textSpan.addEventListener("focus", () => {
-      cellNode.dataset.editing = "true";
-    });
-
-    textSpan.addEventListener("blur", () => {
-      cellNode.dataset.editing = "false";
-      state.texts[i] = textSpan.textContent.trim() || " ";
-      persist();
-      refreshWinState();
-    });
-
-    textSpan.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        textSpan.blur();
-      }
-    });
+      textSpan.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          textSpan.blur();
+        }
+      });
+    } else {
+      textSpan.contentEditable = "false";
+      cellNode.addEventListener("click", async () => {
+        state.marked[i] = !state.marked[i];
+        persistLocal();
+        await persistShared();
+        renderBoard();
+        refreshWinState();
+      });
+    }
 
     boardEl.appendChild(cellNode);
   }

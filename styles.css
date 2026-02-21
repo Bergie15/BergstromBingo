@@ -43,7 +43,7 @@ header p {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 button {
@@ -56,6 +56,12 @@ button {
   border-radius: 999px;
   padding: 0.5rem 1rem;
   font-size: 0.95rem;
+}
+
+.sync-status {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  opacity: 0.75;
 }
 
 .board {
@@ -86,6 +92,11 @@ button {
   border-color: transparent;
 }
 
+.cell.editing {
+  outline: 2px dashed #a7b4e9;
+  outline-offset: -3px;
+}
+
 .cell-text {
   display: block;
   width: 100%;
@@ -95,7 +106,7 @@ button {
   white-space: normal;
 }
 
-.cell-text:focus {
+.cell.editing .cell-text:focus {
   text-decoration: underline dotted;
 }
 

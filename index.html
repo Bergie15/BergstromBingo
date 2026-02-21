@@ -10,13 +10,17 @@
     <main class="app">
       <header>
         <h1>Custom Bingo</h1>
-        <p>Edit any square, tap/click to mark it green, and get fireworks for 5 in a row.</p>
+        <p>Tap/click squares to mark green. Use Edit Mode to change wording, then save.</p>
       </header>
 
       <section class="controls">
+        <button id="toggle-edit" type="button">Enter Edit Mode</button>
+        <button id="save-text" type="button" hidden>Save Text Changes</button>
         <button id="reset-board" type="button">Reset Board</button>
         <button id="clear-marks" type="button">Clear Marks</button>
       </section>
+
+      <p id="sync-status" class="sync-status" aria-live="polite"></p>
 
       <section class="board-wrapper">
         <div id="bingo-board" class="board" aria-label="Bingo board"></div>
@@ -29,10 +33,11 @@
 
     <template id="cell-template">
       <button class="cell" type="button">
-        <span class="cell-text" contenteditable="true"></span>
+        <span class="cell-text"></span>
       </button>
     </template>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
   </body>
 </html>
