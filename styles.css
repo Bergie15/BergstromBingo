@@ -1,0 +1,134 @@
+:root {
+  color-scheme: light;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --bg: #f7f8fc;
+  --card: #ffffff;
+  --line: #d9ddf0;
+  --text: #1f2a44;
+  --active: #2ca850;
+  --active-text: #f4fff6;
+  --shadow: 0 12px 24px rgba(24, 40, 80, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, #ffffff, var(--bg));
+  color: var(--text);
+}
+
+.app {
+  width: min(900px, 94vw);
+  margin: 1.5rem auto 2.5rem;
+  background: var(--card);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 1rem 1rem 1.25rem;
+}
+
+h1 {
+  margin-bottom: 0.5rem;
+}
+
+header p {
+  margin-top: 0;
+  opacity: 0.8;
+}
+
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+button {
+  cursor: pointer;
+}
+
+.controls button {
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+}
+
+.sync-status {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.cell {
+  min-height: 95px;
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+  padding: 0.45rem;
+  background: white;
+  color: inherit;
+  text-align: left;
+  transition: transform 160ms ease, background-color 160ms ease;
+}
+
+.cell:hover,
+.cell:focus-visible {
+  transform: translateY(-1px);
+}
+
+.cell.marked {
+  background: var(--active);
+  color: var(--active-text);
+  border-color: transparent;
+}
+
+.cell.editing {
+  outline: 2px dashed #a7b4e9;
+  outline-offset: -3px;
+}
+
+.cell-text {
+  display: block;
+  width: 100%;
+  line-height: 1.25;
+  font-size: 0.92rem;
+  outline: none;
+  white-space: normal;
+}
+
+.cell.editing .cell-text:focus {
+  text-decoration: underline dotted;
+}
+
+.win-message {
+  min-height: 1.3em;
+  font-weight: 600;
+  margin: 1rem 0 0;
+}
+
+.fireworks {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 580px) {
+  .board {
+    gap: 0.4rem;
+  }
+
+  .cell {
+    min-height: 72px;
+    font-size: 0.85rem;
+  }
+}
