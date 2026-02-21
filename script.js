@@ -236,20 +236,16 @@ function renderBoard() {
     cellNode.classList.toggle("editing", isEditMode);
 
     if (isEditMode) {
-      textSpan.contentEditable = "true";
-
-      textSpan.addEventListener("input", () => {
-        draftTexts[i] = textSpan.textContent.trim() || " ";
-      });
-
-      textSpan.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          textSpan.blur();
+      cellNode.addEventListener("click", () => {
+        const updatedText = window.prompt("Edit this square", draftTexts[i]);
+        if (updatedText === null) {
+          return;
         }
+
+        draftTexts[i] = updatedText.trim() || " ";
+        renderBoard();
       });
     } else {
-      textSpan.contentEditable = "false";
       cellNode.addEventListener("click", async () => {
         state.marked[i] = !state.marked[i];
         persistLocal();

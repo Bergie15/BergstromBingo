@@ -106,9 +106,6 @@ button {
   white-space: normal;
 }
 
-.cell.editing .cell-text:focus {
-  text-decoration: underline dotted;
-}
 
 .win-message {
   min-height: 1.3em;
